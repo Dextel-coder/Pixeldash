@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Dash</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+            background-color: #111;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const player = {
+        x: 50,
+        y: canvas.height - 150,
+        size: 30,
+        color: "lime",
+        velocityY: 0,
+        gravity: 1,
+        jumpPower: -20,
+        isJumping: false
+    };
+
+    let blocks = [];
+    let spikes = [];
+    let score = 0;
+    let gameSpeed = 5;
+
+    // Difficulty thresholds
+    const difficultyLevels = [
+        { score: 0, speed: 5, blockFrequency: 300 },
+        { score: 10, speed: 7, blockFrequency: 200 },
+        { score: 20, speed: 10, blockFrequency: 150 }
+    ];
+    let currentLevel = 0;
+
+    function createBlock() {
+        const width = Math.random() * 80 + 20; // Random block width (20 to 100px)
+        const height = Math.random() * 40 + 20; // Random block height (20 to 60px)
+        const gap = Math.random() * 150 + difficultyLevels[currentLevel].blockFrequency;
+        const x = canvas.width + gap;
+
+        // Randomize block type: 70% chance for block, 30% for spike
+        const type = Math.random() < 0.7 ? "block" : "spike";
+        if (type === "block") {
+            blocks.push({ x, y: canvas.height - height, width, height, color: "black" });
+        } else {
+            spikes.push({ x, y: canvas.height - height - 20, size: 20, color: "red" });
+        }
+    }
+
+    function updateBlocksAndSpikes() {
+        blocks.forEach((block, index) => {
+            block.x -= gameSpeed;
+            if (block.x + block.width < 0) blocks.splice(index, 1);
+        });
+
+        spikes.forEach((spike, index) => {
+            spike.x -= gameSpeed;
+            if (spike.x + spike.size < 0) spikes.splice(index, 1);
+        });
+
+        if (
+            blocks.length === 0 ||
+            blocks[blocks.length - 1].x < canvas.width - Math.random() * 300
+        ) {
+            createBlock();
+        }
+    }
+
+    function drawBlocksAndSpikes() {
+        blocks.forEach(block => {
+            ctx.fillStyle = block.color;
+            ctx.fillRect(block.x, block.y, block.width, block.height);
+        });
+
+        spikes.forEach(spike => {
+            ctx.fillStyle = spike.color;
+            ctx.beginPath();
+            ctx.moveTo(spike.x, spike.y + spike.size); // Bottom-left corner
+            ctx.lineTo(spike.x + spike.size / 2, spike.y); // Top point
+            ctx.lineTo(spike.x + spike.size, spike.y + spike.size); // Bottom-right corner
+            ctx.closePath();
+            ctx.fill();
+        });
+    }
+
+    function handlePlayer() {
+        // Apply gravity
+        player.velocityY += player.gravity;
+        player.y += player.velocityY;
+
+        // Prevent player from falling through the ground
+        if (player.y > canvas.height - player.size) {
+            player.y = canvas.height - player.size;
+            player.velocityY = 0;
+            player.isJumping = false;
+        }
+
+        // Draw player
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+    }
+
+    function checkCollision() {
+        blocks.forEach(block => {
+            if (
+                player.x < block.x + block.width &&
+                player.x + player.size > block.x &&
+                player.y + player.size > block.y
+            ) {
+                // Allow player to land on block
+                player.y = block.y - player.size;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+        });
+
+        spikes.forEach(spike => {
+            if (
+                player.x < spike.x + spike.size &&
+                player.x + player.size > spike.x &&
+                player.y + player.size > spike.y
+            ) {
+                // Game over
+                alert(`Game Over! Your score: ${score}`);
+                document.location.reload();
+            }
+        });
+    }
+
+    function updateDifficulty() {
+        const nextLevel = difficultyLevels.findIndex(
+            level => score >= level.score && score < (difficultyLevels[currentLevel + 1]?.score || Infinity)
+        );
+        if (nextLevel !== currentLevel) {
+            currentLevel = nextLevel;
+            gameSpeed = difficultyLevels[currentLevel].speed;
+        }
+    }
+
+    function updateGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        handlePlayer();
+        updateBlocksAndSpikes();
+        drawBlocksAndSpikes();
+        checkCollision();
+        updateDifficulty();
+
+        // Display score
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText(`Score: ${score}`, 20, 40);
+        ctx.fillText(`Level: ${currentLevel + 1}`, 20, 70);
+
+        score += 0.01; // Increment score gradually
+
+        requestAnimationFrame(updateGame);
+    }
+
+    // Event listener for jumping
+    window.addEventListener("touchstart", () => {
+        if (!player.isJumping) {
+            player.velocityY = player.jumpPower;
+            player.isJumping = true;
+        }
+    });
+
+    // Start game
+    updateGame();
+</script>
+</body>
+</html>
