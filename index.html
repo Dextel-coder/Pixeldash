@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Dash</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+            background-color: #111;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const player = {
+        x: 50,
+        y: canvas.height - 150,
+        size: 30,
+        color: "lime",
+        velocityY: 0,
+        gravity: 1,
+        jumpPower: -20,
+        isJumping: false
+    };
+
+    let blocks = [];
+    let score = 0;
+    let gameSpeed = 5;
+
+    function createBlock() {
+        const width = Math.random() * 80 + 20; // Random block width (20 to 100px)
+        const height = Math.random() * 40 + 20; // Random block height (20 to 60px)
+        const gap = Math.random() * 150 + 200; // Random gap between blocks
+        const color = `hsl(${Math.random() * 360}, 70%, 50%)`; // Random block color
+        const x = canvas.width + gap;
+
+        blocks.push({ x, y: canvas.height - height, width, height, color });
+    }
+
+    function updateBlocks() {
+        // Move blocks to the left
+        blocks.forEach((block, index) => {
+            block.x -= gameSpeed;
+
+            // Remove blocks that have gone off-screen
+            if (block.x + block.width < 0) {
+                blocks.splice(index, 1);
+                score++;
+            }
+        });
+
+        // Add a new block when there are none or the last block is far enough
+        if (
+            blocks.length === 0 ||
+            blocks[blocks.length - 1].x < canvas.width - Math.random() * 300
+        ) {
+            createBlock();
+        }
+    }
+
+    function drawBlocks() {
+        blocks.forEach(block => {
+            ctx.fillStyle = block.color;
+            ctx.fillRect(block.x, block.y, block.width, block.height);
+        });
+    }
+
+    function handlePlayer() {
+        // Apply gravity
+        player.velocityY += player.gravity;
+        player.y += player.velocityY;
+
+        // Prevent player from falling through the ground
+        if (player.y > canvas.height - player.size) {
+            player.y = canvas.height - player.size;
+            player.velocityY = 0;
+            player.isJumping = false;
+        }
+
+        // Draw player
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+    }
+
+    function checkCollision() {
+        blocks.forEach(block => {
+            if (
+                player.x < block.x + block.width &&
+                player.x + player.size > block.x &&
+                player.y + player.size > block.y
+            ) {
+                // Game over
+                alert(`Game Over! Your score: ${score}`);
+                document.location.reload();
+            }
+        });
+    }
+
+    function updateGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        handlePlayer();
+        updateBlocks();
+        drawBlocks();
+        checkCollision();
+
+        // Display score
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText(`Score: ${score}`, 20, 40);
+
+        requestAnimationFrame(updateGame);
+    }
+
+    // Event listener for jumping
+    window.addEventListener("touchstart", () => {
+        if (!player.isJumping) {
+            player.velocityY = player.jumpPower;
+            player.isJumping = true;
+        }
+    });
+
+    // Start game
+    updateGame();
+</script>
+</body>
+</html>
