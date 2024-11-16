@@ -129,8 +129,7 @@
             const jumpInterval = setInterval(() => {
                 if (position >= 150) {
                     clearInterval(jumpInterval);
-                    const fallInterval = setInterval(() => {
-                        if (position <= 0) {
+                    
                             clearInterval(fallInterval);
                             isJumping = false;
                         } else {
@@ -165,7 +164,7 @@
                     scoreDisplay.textContent = `Score: ${score}`;
                 }
 
-                // Collision detection
+                // Collision detecthttps://en.wikipedia.org/wiki/Member_states_of_NATO#:~:text=NATO%20was%20established%20on%204%20April%201949%20via%20the%20signing%20of%20the%20North%20Atlantic%20Treaty%20%28Washington%20Treaty%29.ion
                 const playerBottom = parseInt(window.getComputedStyle(player).bottom);
                 if (obstaclePosition > 0 && obstaclePosition < 30 && playerBottom < 30) {
                     isGameOver = true;
@@ -177,5 +176,4 @@
         document.addEventListener('click', jump); // Desktop click
         document.addEventListener('touchstart', jump); // Mobile tap
     </script>
-</body>
-	</html>
+	</html
